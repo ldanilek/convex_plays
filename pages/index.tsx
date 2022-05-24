@@ -7,8 +7,9 @@ import convexConfig from "../convex.json";
 import { useQuery, useMutation, useConvex } from "../convex/_generated";
 import { useState, useEffect } from 'react';
 import chess from "chess";
-import { minVotePeriod } from '../common';
+import { GameState, minVotePeriod, PlayedMove, MoveOption, sortOptions } from '../common';
 import { constructGame } from '../chess';
+import { Id } from 'convex-dev/values';
 
 
 
@@ -61,11 +62,44 @@ const ChessSquare = ({piece, index, onClick, highlight}: SquareProps) => {
   </div>;
 }
 
+const optimisticVote = (
+  move: string, 
+  options: MoveOption[] | undefined, 
+  game: [PlayedMove[], GameState] | null | undefined,
+): MoveOption[] | undefined => {
+  if (options !== undefined && !!game) {
+    const [moves, gameState] = game;
+    let newOptions = [...options];
+    const option = newOptions.find((existingOption) => existingOption.move === move);
+    if (!option) {
+      newOptions.push({
+        _id: Id.fromString(crypto.randomUUID()),
+        gameId: gameState._id,
+        moveIndex: gameState.moveCount,
+        move,
+        votes: 1,
+      })
+    } else {
+      option.votes++;
+    }
+    sortOptions(newOptions);
+    return newOptions;
+  }
+}
+
 const ChessBoard = () => {
   const game = useQuery("getGame");
   const createGame = useMutation("createGame");
   const [srcIndex, setSrcIndex] = useState<number | null>(null);
-  const voteForOption = useMutation("voteForOption");
+  const voteForOption = useMutation("voteForOption").withOptimisticUpdate(
+    (localQueryStore, move) => {
+      const options = localQueryStore.getQuery("getOptions", []);
+      const newOptions = optimisticVote(move, options, game);
+      if (!!newOptions) {
+        localQueryStore.setQuery("getOptions", [], newOptions);
+      }
+    }
+  );
 
   useEffect(() => {
     if (game === null) {
@@ -158,13 +192,22 @@ const ChessBoard = () => {
 
 const EntryForm = () => {
   const options = useQuery("getOptions") ?? [];
-  const voteForOption = useMutation("voteForOption");
+  const game = useQuery("getGame");
+  const voteForOption = useMutation("voteForOption").withOptimisticUpdate(
+    (localQueryStore, move) => {
+      const options = localQueryStore.getQuery("getOptions", []);
+      const newOptions = optimisticVote(move, options, game);
+      if (!!newOptions) {
+        localQueryStore.setQuery("getOptions", [], newOptions);
+      }
+    }
+  );
   const [moveInput, setMoveInput] = useState("");
   const playMove = useMutation("playMove");
-  const game = useQuery("getGame");
   const [playEnabled, setPlayEnabled] = useState(false);
   let toPlay = "White";
   let sampleMove = "Bxe5";
+  let completion: string | null = null;
   if (!!game) {
     const [moves, gameState] = game;
     const gameClient = constructGame(gameState, moves);
@@ -175,6 +218,22 @@ const EntryForm = () => {
       sampleMove = possibleMove;
       break;
     }
+    const anyGame: any = gameClient;
+    if (anyGame["isCheckmate"]) {
+      completion = "Checkmate!";
+      sampleMove = "restart";
+    }
+    if (gameClient.isStalemate) {
+      completion = "Stalemate!";
+      sampleMove = "restart";
+    }
+    if (gameClient.isRepetition) {
+      completion = "Stalemate by Repetition!";
+      sampleMove = "restart";
+    }
+  }
+  if (completion) {
+    console.log(completion);
   }
 
   const handleInputChange = (event: any) => {
@@ -201,14 +260,14 @@ const EntryForm = () => {
   updatePlayEnabled();
   return (<div>
     <p>
-      {toPlay} to play.
+      {completion ? <span>{completion} </span> : <span>{toPlay} to move. </span>}<br/>
       Enter moves in algebraic notation like {sampleMove}, or click on the board.
       Only the top voted move can be played, after at least {minVotePeriod / 1000} seconds of voting.
       Invalid moves are ignored.
       Special instructions &quot;undo&quot; and &quot;resign&quot; must be unanimous.
     </p>
     <ul>
-      {options.map(option => <li key={option.move}>{option.move}: {option.votes} votes</li>)}
+      {options.map(option => <li key={option.move}>{option.move}: {option.votes} vote{option.votes !== 1 ? "s" : ""}</li>)}
     </ul>
     <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} />
     <button onClick={submit}>Vote</button>

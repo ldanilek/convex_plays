@@ -25,7 +25,7 @@ export default mutation(async ({db}) => {
   }
   options.sort((a, b) => (a.votes < b.votes) ? 1 : -1);
   let move = options[0].move;
-  if (move === "resign" || move === "undo") {
+  if (move === "resign" || move === "undo" || move === "restart") {
     for (let moveOption of options) {
       if (moveOption.move !== move) {
         move = moveOption.move;
@@ -38,7 +38,7 @@ export default mutation(async ({db}) => {
   db.insert("moves", {gameId: game._id, moveIndex: game.moveCount, move});
   db.update(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
 
-  if (move === "resign") {
+  if (move === "resign" || move === "restart") {
     // Start a new game.
     db.insert("games", {moveCount: 0, lastMoveTime: (new Date()).getTime()});
   }

@@ -1,6 +1,6 @@
 import { query } from "convex-dev/server";
 import {Id} from "convex-dev/values";
-import {GameState, MoveOption} from "../common";
+import {GameState, MoveOption, sortOptions} from "../common";
 
 export default query(async ({db}): Promise<MoveOption[]> => {
   const game: GameState | null = await db.table("games").order("desc").first();
@@ -13,6 +13,6 @@ export default query(async ({db}): Promise<MoveOption[]> => {
     q => q.eq(q.field("moveIndex"), game.moveCount)
   ).collect();
   // Should order in the query, and potentially only take the top options.
-  options.sort((a, b) => (a.votes < b.votes) ? 1 : -1);
+  sortOptions(options);
   return options;
 });
