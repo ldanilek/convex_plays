@@ -2,6 +2,86 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import { ConvexProvider, ConvexReactClient } from "convex-dev/react";
+import convexConfig from "../convex.json";
+import { useQuery, useMutation, useConvex } from "../convex/_generated";
+import { useState, useEffect } from 'react';
+import chess from "chess";
+
+
+
+const convex = new ConvexReactClient(convexConfig.origin);
+
+
+const ChessSquare = ({piece, index}: {piece: chess.Piece, index: number}) => {
+  const pieceStr = piece ? (piece.type === "pawn" ? "P" : piece.notation) : "";
+  const colorClass = piece ? (piece.side.name === "white" ? styles.whitepiece : styles.blackpiece) : undefined;
+  const row = Math.floor(index / 8);
+  const col = index % 8;
+  const squareColorClass = ((row + col) % 2 === 0) ? styles.blacksquare : styles.whitesquare;
+  return <div className={styles.griditem + " " + squareColorClass}>
+    <span className={colorClass}>{pieceStr}</span>
+  </div>;
+}
+
+const ChessBoard = () => {
+  const game = useQuery("getGame");
+  const createGame = useMutation("createGame");
+  useEffect(() => {
+    if (game === null) {
+      createGame();
+    }
+  })
+  if (!game) {
+    return null;
+  }
+  const [moves, gameState] = game;
+  const gameClient = chess.create();
+  for (let move of moves) {
+    gameClient.move(move.move);
+  }
+  // TODO: display move history?
+  const board = gameClient.game.board;
+  const squares = board.squares;
+
+  return (<div className={styles.gridcontainer}>
+    {squares.map((square, i) => <ChessSquare key={i} piece={square.piece} index={i} />)}
+  </div>);
+};
+
+const EntryForm = () => {
+  const options = useQuery("getOptions") ?? [];
+  const voteForOption = useMutation("voteForOption");
+  const [moveInput, setMoveInput] = useState("");
+  const playMove = useMutation("playMove");
+  const handleInputChange = (event: any) => {
+    setMoveInput(event.target.value);
+  };
+  const submit = () => {
+    voteForOption(moveInput);
+  };
+  const play = () => {
+    playMove();
+  }
+  return (<div>
+    <ul>
+      {options.map(option => <li key={option.move}>{option.move}: {option.votes} votes</li>)}
+    </ul>
+    <input type="text" onChange={handleInputChange} value={moveInput} />
+    <button onClick={submit}>Vote</button>
+    <div><button onClick={play}>Play Top Move</button></div>
+  </div>);
+};
+
+const PlayChess = () => {
+  return (
+    <div>
+      <ChessBoard />
+      <EntryForm />
+    </div>
+  );
+};
+
 
 const Home: NextPage = () => {
   return (
@@ -14,43 +94,13 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Convex Plays Chess
         </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.tsx</code>
-        </p>
+        <ConvexProvider client={convex}>
+          <PlayChess />
+        </ConvexProvider>
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
       </main>
 
       <footer className={styles.footer}>
