@@ -1,9 +1,6 @@
 import { mutation } from "convex-dev/server";
 import { Id } from "convex-dev/values";
-import {findAutomaticMove, GameState, MoveOption, PlayedMove} from "../common";
-
-// 10 seconds per move, minimum.
-const minVotePeriod = 10 * 1000;
+import {GameState, MoveOption, PlayedMove, minVotePeriod} from "../common";
 
 export default mutation(async ({db}) => {
   const game: GameState | null = await db.table("games").order("desc").first();
@@ -14,8 +11,8 @@ export default mutation(async ({db}) => {
   // Make sure everyone had time to vote.
   // Currently disabled because the UX is confusing in this case.
   if (game.lastMoveTime + minVotePeriod > currentTime) {
-    //console.log("too soon; cannot move yet");
-    //return;
+    console.log("too soon; cannot move yet");
+    return;
   }
   let options: MoveOption[] = await db.table("move_options").filter(
     q => q.eq(q.field("gameId"), game._id)

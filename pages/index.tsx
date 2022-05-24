@@ -7,7 +7,8 @@ import convexConfig from "../convex.json";
 import { useQuery, useMutation, useConvex } from "../convex/_generated";
 import { useState, useEffect } from 'react';
 import chess from "chess";
-import { constructGame } from '../common';
+import { minVotePeriod } from '../common';
+import { constructGame } from '../chess';
 
 
 
@@ -31,14 +32,31 @@ const blackPieceToString = {
   king: "♚",
 };
 
-const ChessSquare = ({piece, index}: {piece: chess.Piece, index: number}) => {
+enum Highlight {
+  None = 1,
+  Source,
+  PossibleDest,
+  // TODO: also show last move with highlights
+}
+
+type SquareProps = {
+  piece: chess.Piece,
+  index: number,
+  onClick: (index: number) => void,
+  highlight: Highlight,
+};
+
+const ChessSquare = ({piece, index, onClick, highlight}: SquareProps) => {
   const isWhite = piece && piece.side.name === "white";
   const pieceStr = piece ? (isWhite ? whitePieceToString[piece.type] : blackPieceToString[piece.type]) : "";
   const colorClass = piece ? (isWhite ? styles.whitepiece : styles.blackpiece) : undefined;
   const row = Math.floor(index / 8);
   const col = index % 8;
   const squareColorClass = ((row + col) % 2 === 0) ? styles.whitesquare : styles.blacksquare;
-  return <div className={styles.griditem + " " + squareColorClass}>
+  const highlightClass = highlight === Highlight.Source ? styles.sourcesquare : (
+    highlight === Highlight.PossibleDest ? styles.destsquare :
+    undefined);
+  return <div className={styles.griditem + " " + (highlightClass ?? squareColorClass)} onClick={() => onClick(index)}>
     <span className={colorClass}>{pieceStr}</span>
   </div>;
 }
@@ -46,6 +64,9 @@ const ChessSquare = ({piece, index}: {piece: chess.Piece, index: number}) => {
 const ChessBoard = () => {
   const game = useQuery("getGame");
   const createGame = useMutation("createGame");
+  const [srcIndex, setSrcIndex] = useState<number | null>(null);
+  const voteForOption = useMutation("voteForOption");
+
   useEffect(() => {
     if (game === null) {
       createGame();
@@ -58,7 +79,7 @@ const ChessBoard = () => {
   const gameClient = constructGame(gameState, moves);
   // TODO: display move history?
   const board = gameClient.game.board;
-  const squares = board.squares;
+  const squares = board.squares.slice();
 
   // Reorder squares so rank 1 is at the bottom.
   for (let rank = 0; rank < 4; rank++) {
@@ -72,8 +93,66 @@ const ChessBoard = () => {
     }
   }
 
+  const squareIndexFromSquare = (square: chess.Square): number => {
+    const swapRank = 8 - square.rank;
+    const file = square.file.charCodeAt(0) - "a".charCodeAt(0);
+    return swapRank * 8 + file;
+  }
+
+  let validMovesByIndex = new Map<number, chess.ValidMove>();
+  for (let validMove of gameClient.validMoves) {
+    validMovesByIndex.set(squareIndexFromSquare(validMove.src), validMove);
+  }
+
+  const squareMatches = (s1: chess.Square, s2: chess.Square): boolean => {
+    return s1.file === s2.file && s1.rank === s2.rank;
+  };
+
+  let possibleDestMoves = new Map<number, string>();
+  if (srcIndex !== null) {
+    const validMoves = validMovesByIndex.get(srcIndex);
+    if (!!validMoves) {
+      for (let notation in gameClient.notatedMoves) {
+        const move = gameClient.notatedMoves[notation];
+        if (squareMatches(move.src, validMoves.src)) {
+          possibleDestMoves.set(squareIndexFromSquare(move.dest), notation);
+        }
+      }
+    }
+  }
+
+  const handleClick = (i: number) => {
+    if (srcIndex === null) {
+      setSrcIndex(i);
+    } else {
+      const moveNotation = possibleDestMoves.get(i);
+      if (moveNotation) {
+        voteForOption(moveNotation);
+        setSrcIndex(null);
+      } else {
+        setSrcIndex(i);
+      }
+    }
+  };
+
+  const highlightByIndex = (i: number): Highlight => {
+    if (i === srcIndex) {
+      return Highlight.Source;
+    }
+    if (possibleDestMoves.get(i)) {
+      return Highlight.PossibleDest;
+    }
+    return Highlight.None;
+  };
+
   return (<div className={styles.gridcontainer}>
-    {squares.map((square, i) => <ChessSquare key={i} piece={square.piece} index={i} />)}
+    {squares.map((square, i) => <ChessSquare
+      key={i}
+      piece={square.piece}
+      index={i} 
+      onClick={handleClick}
+      highlight={highlightByIndex(i)}
+    />)}
   </div>);
 };
 
@@ -82,28 +161,58 @@ const EntryForm = () => {
   const voteForOption = useMutation("voteForOption");
   const [moveInput, setMoveInput] = useState("");
   const playMove = useMutation("playMove");
+  const game = useQuery("getGame");
+  const [playEnabled, setPlayEnabled] = useState(false);
+  let toPlay = "White";
+  let sampleMove = "Bxe5";
+  if (!!game) {
+    const [moves, gameState] = game;
+    const gameClient = constructGame(gameState, moves);
+    if (gameClient.game.board.lastMovedPiece && gameClient.game.board.lastMovedPiece.side.name === "white") {
+      toPlay = "Black";
+    }
+    for (let possibleMove in gameClient.notatedMoves) {
+      sampleMove = possibleMove;
+      break;
+    }
+  }
+
   const handleInputChange = (event: any) => {
     setMoveInput(event.target.value);
   };
   const submit = () => {
     voteForOption(moveInput);
+    setMoveInput("");
   };
   const play = () => {
     playMove();
   }
+  const updatePlayEnabled = () => {
+    const currentTime = (new Date()).getTime();
+    const shouldPlayBeEnabled = !!game && game[1].lastMoveTime + minVotePeriod < currentTime;
+    if (shouldPlayBeEnabled !== playEnabled) {
+      setPlayEnabled(shouldPlayBeEnabled);
+    }
+    if (!shouldPlayBeEnabled && !!game) {
+      // Schedule button being re-enabled.
+      setTimeout(updatePlayEnabled, game[1].lastMoveTime + minVotePeriod - currentTime);
+    }
+  };
+  updatePlayEnabled();
   return (<div>
     <p>
-      Enter moves in algebraic notation like Bxe5.
-      Only the top voted move can be played.
+      {toPlay} to play.
+      Enter moves in algebraic notation like {sampleMove}, or click on the board.
+      Only the top voted move can be played, after at least {minVotePeriod / 1000} seconds of voting.
       Invalid moves are ignored.
       Special instructions &quot;undo&quot; and &quot;resign&quot; must be unanimous.
     </p>
     <ul>
       {options.map(option => <li key={option.move}>{option.move}: {option.votes} votes</li>)}
     </ul>
-    <input type="text" onChange={handleInputChange} value={moveInput} />
+    <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} />
     <button onClick={submit}>Vote</button>
-    <div><button onClick={play}>Play Top Move</button></div>
+    <div><button onClick={play} disabled={!playEnabled}>Play Top Move</button></div>
   </div>);
 };
 

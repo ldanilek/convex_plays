@@ -101,6 +101,14 @@
   background-color: white;
 }
 
+.sourcesquare {
+  background-color: lightblue;
+}
+
+.destsquare {
+  background-color: yellow;
+}
+
 .blacksquare {
   background-color: tan;
 }

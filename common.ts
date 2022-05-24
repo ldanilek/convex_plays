@@ -1,5 +1,4 @@
 import { Id } from "convex-dev/values";
-import chess from "chess";
 
 export type GameState = {
   _id: Id,
@@ -22,40 +21,6 @@ export type MoveOption = {
   votes: number,
 };
 
-export const constructGame = (game: GameState, moves: PlayedMove[]): chess.AlgebraicGameClient => {
-  const gameClient = chess.create();
-  let gameMove: chess.PlayedMove | null = null;
-  for (let move of moves) {
-    if (move.move === "resign") {
-      break;
-    }
-    if (move.move === "undo" && gameMove) {
-      try {
-        // https://github.com/brozeph/node-chess/issues/77
-        gameMove.undo();
-      } catch (error) {
-        console.log(error);
-      }
-      continue;
-    }
-    if (!(move.move in gameClient.notatedMoves)) {
-      console.log("invalid move", move.move);
-      continue;
-    }
-    try {
-      gameMove = gameClient.move(move.move);
-    } catch (error) {
-      console.log(error);
-      // ignore invalid moves
-    }
-  }
-  return gameClient;
-}
+// 10 seconds per move, minimum.
+export const minVotePeriod = 10 * 1000;
 
-export const findAutomaticMove = (game: GameState, moves: PlayedMove[]): string => {
-  const gameClient = constructGame(game, moves);
-  for (let move in gameClient.notatedMoves) {
-    return move;
-  }
-  return "";
-};
