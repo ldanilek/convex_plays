@@ -320,8 +320,10 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
     setMoveInput(event.target.value);
   };
   const submit = () => {
-    voteForOption(moveInput);
-    setMoveInput("");
+    if (moveInput && moveInput.length > 0) {
+      voteForOption(moveInput);
+      setMoveInput("");
+    }
   };
   const play = () => {
     playMove();
@@ -338,8 +340,13 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
     }
   };
   updatePlayEnabled();
+  const onKeyUp = (event: any) => {
+    if (event.key === 'Enter') {
+      submit();
+    }
+  };
   return (<div style={{textAlign: "center"}}>
-    <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} className={styles.optioninput} />
+    <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} className={styles.optioninput} onKeyUp={onKeyUp} />
     <button className={styles.button33} onClick={submit} disabled={!moveInput}>Vote</button>
     <div><button onClick={play} disabled={!playEnabled} className={styles.button33}>Play Top Move</button></div>
     <OptionsTable options={options} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
