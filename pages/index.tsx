@@ -7,6 +7,7 @@ import convexConfig from "../convex.json";
 import { useQuery, useMutation, useConvex } from "../convex/_generated";
 import { useState, useEffect } from 'react';
 import chess from "chess";
+import { constructGame } from '../common';
 
 
 
@@ -18,7 +19,7 @@ const ChessSquare = ({piece, index}: {piece: chess.Piece, index: number}) => {
   const colorClass = piece ? (piece.side.name === "white" ? styles.whitepiece : styles.blackpiece) : undefined;
   const row = Math.floor(index / 8);
   const col = index % 8;
-  const squareColorClass = ((row + col) % 2 === 0) ? styles.blacksquare : styles.whitesquare;
+  const squareColorClass = ((row + col) % 2 === 0) ? styles.whitesquare : styles.blacksquare;
   return <div className={styles.griditem + " " + squareColorClass}>
     <span className={colorClass}>{pieceStr}</span>
   </div>;
@@ -36,13 +37,22 @@ const ChessBoard = () => {
     return null;
   }
   const [moves, gameState] = game;
-  const gameClient = chess.create();
-  for (let move of moves) {
-    gameClient.move(move.move);
-  }
+  const gameClient = constructGame(gameState, moves);
   // TODO: display move history?
   const board = gameClient.game.board;
   const squares = board.squares;
+
+  // Reorder squares so rank 1 is at the bottom.
+  for (let rank = 0; rank < 4; rank++) {
+    const swapRank = 7 - rank;
+    for (let file = 0; file < 8; file++) {
+      const index = rank * 8 + file;
+      const swapIndex = swapRank * 8 + file;
+      const temp = squares[swapIndex];
+      squares[swapIndex] = squares[index];
+      squares[index] = temp;
+    }
+  }
 
   return (<div className={styles.gridcontainer}>
     {squares.map((square, i) => <ChessSquare key={i} piece={square.piece} index={i} />)}

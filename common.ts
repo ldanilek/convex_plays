@@ -22,11 +22,21 @@ export type MoveOption = {
   votes: number,
 };
 
-export const findAutomaticMove = (game: GameState, moves: PlayedMove[]): string => {
+export const constructGame = (game: GameState, moves: PlayedMove[]): chess.AlgebraicGameClient => {
   const gameClient = chess.create();
-  for (let move of moves) {
-    gameClient.move(move.move);
-  }
+  moves.forEach(move => {
+    try {
+      gameClient.move(move.move);
+    } catch (error) {
+      console.log(error);
+      // ignore invalid moves
+    }
+  });
+  return gameClient;
+}
+
+export const findAutomaticMove = (game: GameState, moves: PlayedMove[]): string => {
+  const gameClient = constructGame(game, moves);
   for (let move in gameClient.notatedMoves) {
     return move;
   }
