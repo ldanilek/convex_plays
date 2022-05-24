@@ -1,5 +1,5 @@
 .container {
-  padding: 0 2rem;
+  background-color: darkblue;
 }
 
 .main {
@@ -109,8 +109,109 @@
   background-color: yellow;
 }
 
+.hoversquare {
+  background-color: violet;
+}
+
 .blacksquare {
   background-color: tan;
+}
+
+.lastmovesquare {
+  background-color: lightgreen;
+}
+
+.optionstable {
+  border-collapse: collapse;
+  margin: auto;
+  margin-top: 10px;
+  font-size: 0.9em;
+  font-family: sans-serif;
+  min-width: 400px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.optionstable thead tr {
+  background-color: #009879;
+  color: #ffffff;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+.optionstable th,
+.optionstable td {
+    padding: 8px 15px;
+}
+
+.optionstable tbody tr {
+  border-bottom: thin solid #dddddd;
+}
+
+.optionstable tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.optionstable tbody tr:nth-of-type(odd) {
+  background-color: white;
+}
+
+.optionstable tbody tr:last-of-type {
+  border-bottom: 2px solid #009879;
+}
+
+.optionstable tbody tr:first-of-type {
+  font-weight: bold;
+}
+
+.optionstable tbody tr:hover {
+  background-color: violet;
+}
+
+.optioninput {
+  text-align: center;
+  border-style: solid;
+  border-radius: 10px;
+  margin: 10px;
+  padding: 12px 20px;
+  font-size: 30;
+}
+
+.button33 {
+  background-color: #c2fbd7;
+  border-radius: 100px;
+  box-shadow: rgba(44, 187, 99, .2) 0 -25px 18px -14px inset,rgba(44, 187, 99, .15) 0 1px 2px,rgba(44, 187, 99, .15) 0 2px 4px,rgba(44, 187, 99, .15) 0 4px 8px,rgba(44, 187, 99, .15) 0 8px 16px,rgba(44, 187, 99, .15) 0 16px 32px;
+  color: green;
+  cursor: pointer;
+  display: inline-block;
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  padding: 7px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 250ms;
+  border: 0;
+  font-size: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button33:hover {
+  box-shadow: rgba(44,187,99,.35) 0 -25px 18px -14px inset,rgba(44,187,99,.25) 0 1px 2px,rgba(44,187,99,.25) 0 2px 4px,rgba(44,187,99,.25) 0 4px 8px,rgba(44,187,99,.25) 0 8px 16px,rgba(44,187,99,.25) 0 16px 32px;
+  transform: scale(1.05);
+}
+
+.button33:disabled {
+  opacity: 60%;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .card {
@@ -153,4 +254,8 @@
     width: 100%;
     flex-direction: column;
   }
+}
+
+.instructions {
+  color: white;
 }

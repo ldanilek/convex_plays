@@ -37,7 +37,8 @@ enum Highlight {
   None = 1,
   Source,
   PossibleDest,
-  // TODO: also show last move with highlights
+  Hover,
+  LastMove,
 }
 
 type SquareProps = {
@@ -54,11 +55,22 @@ const ChessSquare = ({piece, index, onClick, highlight}: SquareProps) => {
   const row = Math.floor(index / 8);
   const col = index % 8;
   const squareColorClass = ((row + col) % 2 === 0) ? styles.whitesquare : styles.blacksquare;
-  const highlightClass = highlight === Highlight.Source ? styles.sourcesquare : (
-    highlight === Highlight.PossibleDest ? styles.destsquare :
-    undefined);
+  let highlightClass: string | undefined = undefined;
+  switch (highlight) {
+    case Highlight.Source:
+      highlightClass = styles.sourcesquare;
+      break;
+    case Highlight.PossibleDest:
+      highlightClass = styles.destsquare;
+      break;
+    case Highlight.Hover:
+      highlightClass = styles.hoversquare;
+      break;
+    case Highlight.LastMove:
+      highlightClass = styles.lastmovesquare;
+  }
   return <div className={styles.griditem + " " + (highlightClass ?? squareColorClass)} onClick={() => onClick(index)}>
-    <span className={colorClass}>{pieceStr}</span>
+    <span className={colorClass}><span className={styles.noselect}>{pieceStr}</span></span>
   </div>;
 }
 
@@ -87,7 +99,11 @@ const optimisticVote = (
   }
 }
 
-const ChessBoard = () => {
+type ChessBoardProps = {
+  hoverMove: string | null,
+}
+
+const ChessBoard = ({hoverMove}: ChessBoardProps) => {
   const game = useQuery("getGame");
   const createGame = useMutation("createGame");
   const [srcIndex, setSrcIndex] = useState<number | null>(null);
@@ -154,10 +170,32 @@ const ChessBoard = () => {
       }
     }
   }
+  
+  let hoverSourceIndex: number | null = null;
+  let hoverDestIndex: number | null = null;
+  if (hoverMove) {
+    const hoverNotatedMove = gameClient.notatedMoves[hoverMove];
+    if (hoverNotatedMove) {
+      hoverSourceIndex = squareIndexFromSquare(hoverNotatedMove.src);
+      hoverDestIndex = squareIndexFromSquare(hoverNotatedMove.dest);
+    }
+  }
+
+  let lastMoveSrcIndex: number | null = null;
+  let lastMoveDestIndex: number | null = null;
+  if (gameClient.game.moveHistory.length > 0) {
+    const lastMove = gameClient.game.moveHistory[gameClient.game.moveHistory.length - 1];
+    if (lastMove) {
+      lastMoveSrcIndex = squareIndexFromSquare({piece: lastMove.piece, rank: lastMove.prevRank, file: lastMove.prevFile});
+      lastMoveDestIndex = squareIndexFromSquare({piece: lastMove.piece, rank: lastMove.postRank, file: lastMove.postFile});
+    }
+  }
 
   const handleClick = (i: number) => {
     if (srcIndex === null) {
       setSrcIndex(i);
+    } else if (srcIndex === i) {
+      setSrcIndex(null);
     } else {
       const moveNotation = possibleDestMoves.get(i);
       if (moveNotation) {
@@ -176,6 +214,12 @@ const ChessBoard = () => {
     if (possibleDestMoves.get(i)) {
       return Highlight.PossibleDest;
     }
+    if (hoverSourceIndex === i || hoverDestIndex === i) {
+      return Highlight.Hover;
+    }
+    if (lastMoveSrcIndex === i || lastMoveDestIndex === i) {
+      return Highlight.LastMove;
+    }
     return Highlight.None;
   };
 
@@ -190,7 +234,43 @@ const ChessBoard = () => {
   </div>);
 };
 
-const EntryForm = () => {
+type OptionsTableProps = {
+  options: MoveOption[],
+  onMouseEnter: (move: string) => void,
+  onMouseLeave: (move: string) => void,
+};
+
+const OptionsTable = ({options, onMouseEnter, onMouseLeave}: OptionsTableProps) => {
+  if (!options || options.length === 0) {
+    return null;
+  }
+  return (<table className={styles.optionstable}>
+    <thead>
+      <tr>
+        <th>Move</th>
+        <th>Votes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {options.map(option =>
+      <tr
+        key={option.move}
+        onMouseEnter={() => onMouseEnter(option.move)}
+        onMouseLeave={() => onMouseLeave(option.move)}
+      >
+        <td>{option.move}</td>
+        <td>{option.votes}</td>
+      </tr>)}
+    </tbody>
+    </table>);
+};
+
+type EntryFormProps = {
+  onMouseEnter: (move: string) => void,
+  onMouseLeave: (move: string) => void,
+};
+
+const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
   const options = useQuery("getOptions") ?? [];
   const game = useQuery("getGame");
   const voteForOption = useMutation("voteForOption").withOptimisticUpdate(
@@ -258,28 +338,27 @@ const EntryForm = () => {
     }
   };
   updatePlayEnabled();
-  return (<div>
-    <p>
+  return (<div style={{textAlign: "center"}}>
+    <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} className={styles.optioninput} />
+    <button className={styles.button33} onClick={submit} disabled={!moveInput}>Vote</button>
+    <div><button onClick={play} disabled={!playEnabled} className={styles.button33}>Play Top Move</button></div>
+    <OptionsTable options={options} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
+    <p className={styles.instructions}>
       {completion ? <span>{completion} </span> : <span>{toPlay} to move. </span>}<br/>
-      Enter moves in algebraic notation like {sampleMove}, or click on the board.
-      Only the top voted move can be played, after at least {minVotePeriod / 1000} seconds of voting.
-      Invalid moves are ignored.
-      Special instructions &quot;undo&quot; and &quot;resign&quot; must be unanimous.
+      Enter moves in algebraic notation like {sampleMove}, or click on the board.<br/>
+      Only the top voted move can be played, after at least {minVotePeriod / 1000} seconds of voting.<br/>
+      Invalid moves are ignored. Special instructions &quot;undo&quot; and &quot;resign&quot; must be unanimous.<br/>
+      All users play both sides of a single game, in the style of Twitch Plays Pokemon.
     </p>
-    <ul>
-      {options.map(option => <li key={option.move}>{option.move}: {option.votes} vote{option.votes !== 1 ? "s" : ""}</li>)}
-    </ul>
-    <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} />
-    <button onClick={submit}>Vote</button>
-    <div><button onClick={play} disabled={!playEnabled}>Play Top Move</button></div>
   </div>);
 };
 
 const PlayChess = () => {
+  const [hoverMove, setHoverMove] = useState<string|null>(null);
   return (
     <div>
-      <ChessBoard />
-      <EntryForm />
+      <ChessBoard hoverMove={hoverMove} />
+      <EntryForm onMouseEnter={setHoverMove} onMouseLeave={() => setHoverMove(null)} />
     </div>
   );
 };
@@ -289,34 +368,17 @@ const Home: NextPage = () => {
   return (
     <div className={styles.container}>
       <Head>
-        <title>Convex Plays</title>
+        <title>Convex Plays Chess</title>
         <meta name="description" content="Generated by create next app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Convex Plays Chess
-        </h1>
-
         <ConvexProvider client={convex}>
           <PlayChess />
         </ConvexProvider>
 
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   )
 }
