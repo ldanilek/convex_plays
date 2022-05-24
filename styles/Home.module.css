@@ -76,11 +76,13 @@
 .gridcontainer {
   display: grid;
   grid-template-columns: auto auto auto auto auto auto auto auto;
+  width: 480px;
+  margin: auto;
 }
 
 .griditem {
   text-align: center;
-  font-size: 30px;
+  font-size: 70px;
   width: 60px;
   height: 60px;
   line-height: 60px;

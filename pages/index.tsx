@@ -14,9 +14,27 @@ import { constructGame } from '../common';
 const convex = new ConvexReactClient(convexConfig.origin);
 
 
+const whitePieceToString = {
+  pawn: "♙",
+  rook: "♖",
+  knight: "♘",
+  bishop: "♗",
+  queen: "♕",
+  king: "♔",
+};
+const blackPieceToString = {
+  pawn: "♟",
+  rook: "♜",
+  knight: "♞",
+  bishop: "♝",
+  queen: "♛",
+  king: "♚",
+};
+
 const ChessSquare = ({piece, index}: {piece: chess.Piece, index: number}) => {
-  const pieceStr = piece ? (piece.type === "pawn" ? "P" : piece.notation) : "";
-  const colorClass = piece ? (piece.side.name === "white" ? styles.whitepiece : styles.blackpiece) : undefined;
+  const isWhite = piece && piece.side.name === "white";
+  const pieceStr = piece ? (isWhite ? whitePieceToString[piece.type] : blackPieceToString[piece.type]) : "";
+  const colorClass = piece ? (isWhite ? styles.whitepiece : styles.blackpiece) : undefined;
   const row = Math.floor(index / 8);
   const col = index % 8;
   const squareColorClass = ((row + col) % 2 === 0) ? styles.whitesquare : styles.blacksquare;
@@ -74,6 +92,12 @@ const EntryForm = () => {
     playMove();
   }
   return (<div>
+    <p>
+      Enter moves in algebraic notation like Bxe5.
+      Only the top voted move can be played.
+      Invalid moves are ignored.
+      Special instructions "undo" and "resign" must be unanimous.
+    </p>
     <ul>
       {options.map(option => <li key={option.move}>{option.move}: {option.votes} votes</li>)}
     </ul>

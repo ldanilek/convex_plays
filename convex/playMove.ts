@@ -11,9 +11,11 @@ export default mutation(async ({db}) => {
     throw Error("no game; cannot move");
   }
   const currentTime = (new Date()).getTime();
+  // Make sure everyone had time to vote.
+  // Currently disabled because the UX is confusing in this case.
   if (game.lastMoveTime + minVotePeriod > currentTime) {
-    console.log("too soon; cannot move yet");
-    return;
+    //console.log("too soon; cannot move yet");
+    //return;
   }
   let options: MoveOption[] = await db.table("move_options").filter(
     q => q.eq(q.field("gameId"), game._id)
@@ -24,13 +26,25 @@ export default mutation(async ({db}) => {
     console.log("no options");
     return;
   }
-  // Should order in the query and take first.
   options.sort((a, b) => (a.votes < b.votes) ? 1 : -1);
-  const move = options[0].move;
+  let move = options[0].move;
+  if (move === "resign" || move === "undo") {
+    for (let moveOption of options) {
+      if (moveOption.move !== move) {
+        move = moveOption.move;
+        break;
+      }
+    }
+  }
 
   // Play human move.
   db.insert("moves", {gameId: game._id, moveIndex: game.moveCount, move});
   db.update(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
+
+  if (move === "resign") {
+    // Start a new game.
+    db.insert("games", {moveCount: 0, lastMoveTime: (new Date()).getTime()});
+  }
 
   // We can't play computer moves because Convex doesn't like the "events" and "crypto" imports.
   /*
