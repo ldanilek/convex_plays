@@ -348,7 +348,7 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
   return (<div style={{textAlign: "center"}}>
     <input type="text" onChange={handleInputChange} value={moveInput} placeholder={sampleMove} className={styles.optioninput} onKeyUp={onKeyUp} />
     <button className={styles.button33} onClick={submit} disabled={!moveInput}>Vote</button>
-    <div><button onClick={play} disabled={!playEnabled} className={styles.button33}>Play Top Move</button></div>
+    <div><button onClick={play} disabled={!playEnabled || options.length === 0} className={styles.button33}>Play Top Move</button></div>
     <OptionsTable options={options} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} />
     <p className={styles.instructions}>
       {completion ? <span>{completion} </span> : <span>{toPlay} to move. </span>}<br/>
