@@ -1,34 +1,39 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## Let's Play!
 
-## Getting Started
+Play a single game of Chess with the world.
 
-First, run the development server:
+Play online at [convex-plays.vercel.app](https://convex-plays.vercel.app).
 
+Or run locally with
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+And open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+All users, including those running locally, play a single game of [Chess](https://en.wikipedia.org/wiki/Chess), in the style of [Twitch Plays Pokemon](https://en.wikipedia.org/wiki/Twitch_Plays_Pokemon).
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Instructions are at the bottom of the game page, and summarized here:
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Click on the board or type in the text box to vote for a move. If this move gets the most votes from all users across the world, it can be played with the "Play Top Move" button.
 
-## Learn More
+## How it Works
 
-To learn more about Next.js, take a look at the following resources:
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The backend runs on [Convex](https://www.convex.dev/). The frontend is deployed on [Vercel](https://vercel.com/dashboard).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Future Work
 
-## Deploy on Vercel
+There are many opportunities for additional features.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+In addition to these listed, feel free to open issues on this Github project with bug reports or feature suggestions.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1. Take advantage of upcoming Convex features like indices and ordered queries.
+2. Allow or require users to log in; consider restricting votes to one per person.
+3. Create or import a Chess engine that runs on the backend, so users test their collective skills against a computer.
+4. Configure games to have different voting durations, Chess engine strength, etc.
+5. Record and display win/lose statistics.
+6. Allow click-and-drag to move pieces, not just clicks.
+7. Write unit tests.
+8. Allow multiple active games, open or private, a.k.a. "Play with Friends"
