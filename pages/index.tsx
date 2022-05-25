@@ -355,7 +355,7 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
       Enter moves in algebraic notation like {sampleMove}, or click on the board.<br/>
       Only the top voted move can be played, after at least {minVotePeriod / 1000} seconds of voting.<br/>
       Invalid moves are ignored. Special instructions &quot;undo&quot; and &quot;resign&quot; must be unanimous.<br/>
-      All users play both sides of a single game, in the style of Twitch Plays Pokemon.
+      All users play both sides of a single game, in the style of Twitch Plays Pokemon. Check out the code on <a href="https://github.com/ldanilek/convex_plays">Github</a>.
     </p>
   </div>);
 };
