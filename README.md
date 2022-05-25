@@ -37,3 +37,4 @@ In addition to these listed, feel free to open issues on this Github project wit
 6. Allow click-and-drag to move pieces, not just clicks.
 7. Write unit tests.
 8. Allow multiple active games, open or private, a.k.a. "Play with Friends"
+9. Add other games, like Checkers, Backgammon, Pokemon, etc.
