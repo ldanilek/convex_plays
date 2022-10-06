@@ -1,9 +1,9 @@
-import { mutation } from "convex-dev/server";
-import { Id } from "convex-dev/values";
+import { mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import {GameState, MoveOption, PlayedMove, minVotePeriod} from "../common";
 
 export default mutation(async ({db}) => {
-  const game: GameState | null = await db.table("games").order("desc").first();
+  const game: GameState | null = await db.query("games").order("desc").first();
   if (!game) {
     throw Error("no game; cannot move");
   }
@@ -14,7 +14,7 @@ export default mutation(async ({db}) => {
     console.log("too soon; cannot move yet");
     return;
   }
-  let options: MoveOption[] = await db.table("move_options").filter(
+  let options: MoveOption[] = await db.query("move_options").filter(
     q => q.eq(q.field("gameId"), game._id)
   ).filter(
     q => q.eq(q.field("moveIndex"), game.moveCount)
@@ -36,7 +36,7 @@ export default mutation(async ({db}) => {
 
   // Play human move.
   db.insert("moves", {gameId: game._id, moveIndex: game.moveCount, move});
-  db.update(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
+  db.patch(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
 
   if (move === "resign" || move === "restart") {
     // Start a new game.

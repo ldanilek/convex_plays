@@ -1,4 +1,4 @@
-import { Id } from "convex-dev/values";
+import { Id } from "./convex/_generated/dataModel";
 
 export type GameState = {
   _id: Id,

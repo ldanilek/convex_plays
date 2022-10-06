@@ -1,13 +1,13 @@
-import { mutation } from "convex-dev/server";
-import { Id } from "convex-dev/values";
+import { mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import {GameState, MoveOption} from "../common";
 
 export default mutation(async ({db}, move: string): Promise<Id> => {
-  const game: GameState | null = await db.table("games").order("desc").first();
+  const game: GameState | null = await db.query("games").order("desc").first();
   if (!game) {
     throw Error("no game; cannot vote");
   }
-  const moveOption: MoveOption | null = await db.table("move_options").filter(
+  const moveOption: MoveOption | null = await db.query("move_options").filter(
     q => q.eq(q.field("gameId"), game._id)
   ).filter(
     q => q.eq(q.field("moveIndex"), game.moveCount)
@@ -25,7 +25,7 @@ export default mutation(async ({db}, move: string): Promise<Id> => {
     });
   } else {
     console.log("casting vote for ", move);
-    db.update(moveOption._id, {votes: moveOption.votes+1});
+    db.patch(moveOption._id, {votes: moveOption.votes+1});
     return moveOption._id;
   }
 });

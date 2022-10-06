@@ -1,5 +1,5 @@
-import { mutation } from "convex-dev/server";
-import { Id } from "convex-dev/values";
+import { mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import {GameState, MoveOption} from "../common";
 
 export default mutation(async ({db}): Promise<Id> => {
