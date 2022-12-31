@@ -1,7 +1,7 @@
 import { action } from "../_generated/server";
 import { findAutomaticMove } from "../../chess";
 
-const x: any = action(async ({ mutation, query }): Promise<void> => {
+export default action(async ({ mutation, query }): Promise<void> => {
   console.log("computing computer move");
   const g = await query('getGame');
   if (g === null) {
@@ -11,5 +11,3 @@ const x: any = action(async ({ mutation, query }): Promise<void> => {
   const computerMove = findAutomaticMove(game, moves);
   await mutation('playComputerMove', computerMove);
 });
-
-export default x;
