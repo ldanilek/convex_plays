@@ -2,7 +2,7 @@ import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import {GameState, MoveOption} from "../common";
 
-export default mutation(async ({db}, move: string): Promise<Id> => {
+export default mutation(async ({db}, move: string): Promise<Id<'move_options'>> => {
   const game: GameState | null = await db.query("games").order("desc").first();
   if (!game) {
     throw Error("no game; cannot vote");

@@ -4,16 +4,13 @@ import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import { ConvexProvider, ConvexReactClient } from "convex-dev/react";
 import convexConfig from "../convex.json";
-import { useQuery, useMutation, useConvex } from "../convex/_generated";
+import { useQuery, useMutation, useConvex } from "../convex/_generated/react";
 import { useState, useEffect } from 'react';
 import chess from "chess";
 import { GameState, minVotePeriod, PlayedMove, MoveOption, sortOptions } from '../common';
 import { constructGame } from '../chess';
-import { Id } from 'convex-dev/values';
+import { Id } from '../convex/_generated/dataModel';
 
-
-
-const convex = new ConvexReactClient(convexConfig.origin);
 
 
 const whitePieceToString = {
@@ -85,7 +82,8 @@ const optimisticVote = (
     const option = newOptions.find((existingOption) => existingOption.move === move);
     if (!option) {
       newOptions.push({
-        _id: Id.fromString(crypto.randomUUID()),
+        _id: new Id('move_options', crypto.randomUUID()),
+        _creationTime: 0,
         gameId: gameState._id,
         moveIndex: gameState.moveCount,
         move,
@@ -381,9 +379,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <ConvexProvider client={convex}>
-          <PlayChess />
-        </ConvexProvider>
+      <PlayChess />
 
       </main>
     </div>

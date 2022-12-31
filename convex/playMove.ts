@@ -35,12 +35,12 @@ export default mutation(async ({db}) => {
   }
 
   // Play human move.
-  db.insert("moves", {gameId: game._id, moveIndex: game.moveCount, move});
-  db.patch(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
+  await db.insert("moves", {gameId: game._id, moveIndex: game.moveCount, move});
+  await db.patch(game._id, {lastMoveTime: currentTime, moveCount: game.moveCount+1});
 
   if (move === "resign" || move === "restart") {
     // Start a new game.
-    db.insert("games", {moveCount: 0, lastMoveTime: (new Date()).getTime()});
+    await db.insert("games", {moveCount: 0, lastMoveTime: (new Date()).getTime()});
   }
 
   // We can't play computer moves because Convex doesn't like the "events" and "crypto" imports.
