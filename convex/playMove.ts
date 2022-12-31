@@ -14,16 +14,13 @@ export default mutation(async ({db}) => {
     console.log("too soon; cannot move yet");
     return;
   }
-  let options: MoveOption[] = await db.query("move_options").filter(
-    q => q.eq(q.field("gameId"), game._id)
-  ).filter(
-    q => q.eq(q.field("moveIndex"), game.moveCount)
-  ).collect();
+  let options: MoveOption[] = await db.query("move_options").withIndex('by_votes',
+    q => q.eq('gameId', game._id).eq('moveIndex', game.moveCount)
+  ).order('desc').collect();
   if (options.length === 0) {
     console.log("no options");
     return;
   }
-  options.sort((a, b) => (a.votes < b.votes) ? 1 : -1);
   let move = options[0].move;
   if (move === "resign" || move === "undo" || move === "restart") {
     for (let moveOption of options) {
@@ -42,18 +39,4 @@ export default mutation(async ({db}) => {
     // Start a new game.
     await db.insert("games", {moveCount: 0, lastMoveTime: (new Date()).getTime()});
   }
-
-  // We can't play computer moves because Convex doesn't like the "events" and "crypto" imports.
-  /*
-  const newGame: GameState = await db.table("games").order("desc").first();
-  let moves: PlayedMove[] = await db.table("moves").filter(
-    q => q.eq(q.field("gameId"), game._id)
-  ).collect();
-  moves.sort((a, b) => (a.moveIndex > b.moveIndex) ? 1 : -1);
-
-  // Now play computer move.
-  const computerMove = findAutomaticMove(newGame, moves);
-  db.insert("moves", {gameId: newGame._id, moveIndex: newGame.moveCount, move: computerMove});
-  db.update(game._id, {lastMoveTime: currentTime, moveCount: newGame.moveCount+1});
-  */
 });

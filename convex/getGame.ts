@@ -7,9 +7,8 @@ export default query(async ({db}): Promise<[PlayedMove[], GameState] | null> => 
   if (!game) {
     return null;
   }
-  let moves: PlayedMove[] = await db.query("moves").filter(
-    q => q.eq(q.field("gameId"), game._id)
+  let moves: PlayedMove[] = await db.query("moves").withIndex('by_index',
+    q => q.eq('gameId', game._id)
   ).collect();
-  moves.sort((a, b) => (a.moveIndex > b.moveIndex) ? 1 : -1);
   return [moves, game];
 });

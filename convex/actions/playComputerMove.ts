@@ -1,5 +1,5 @@
 import { action } from "../_generated/server";
-import { findAutomaticMove } from "../../chess";
+import { findAutomaticMove } from "../../chessEngine";
 
 export default action(async ({ mutation, query }): Promise<void> => {
   console.log("computing computer move");
@@ -8,6 +8,10 @@ export default action(async ({ mutation, query }): Promise<void> => {
     return;
   }
   const [moves, game] = g;
-  const computerMove = findAutomaticMove(game, moves);
+  if (game.moveCount % 2 === 0) {
+    // only play computer moves as the black pieces.
+    return;
+  }
+  const computerMove = await findAutomaticMove(game, moves);
   await mutation('playComputerMove', computerMove);
 });

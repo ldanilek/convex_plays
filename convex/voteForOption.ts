@@ -7,13 +7,9 @@ export default mutation(async ({db}, move: string): Promise<Id<'move_options'>> 
   if (!game) {
     throw Error("no game; cannot vote");
   }
-  const moveOption: MoveOption | null = await db.query("move_options").filter(
-    q => q.eq(q.field("gameId"), game._id)
-  ).filter(
-    q => q.eq(q.field("moveIndex"), game.moveCount)
-  ).filter(
-    q => q.eq(q.field("move"), move)
-  ).first();
+  const moveOption: MoveOption | null = await db.query("move_options").withIndex(
+    'by_move', q => q.eq('gameId', game._id).eq('moveIndex', game.moveCount).eq('move', move)
+  ).unique();
   if (!moveOption) {
     // No votes yet; create the option.
     console.log("casting first vote for ", move);
@@ -25,7 +21,7 @@ export default mutation(async ({db}, move: string): Promise<Id<'move_options'>> 
     });
   } else {
     console.log("casting vote for ", move);
-    db.patch(moveOption._id, {votes: moveOption.votes+1});
+    await db.patch(moveOption._id, {votes: moveOption.votes+1});
     return moveOption._id;
   }
 });

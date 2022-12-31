@@ -7,12 +7,11 @@ export default query(async ({db}): Promise<MoveOption[]> => {
   if (!game) {
     return [];
   }
-  let options: MoveOption[] = await db.query("move_options").filter(
-    q => q.eq(q.field("gameId"), game._id)
-  ).filter(
-    q => q.eq(q.field("moveIndex"), game.moveCount)
-  ).collect();
-  // Should order in the query, and potentially only take the top options.
+  let options: MoveOption[] = await db.query("move_options").withIndex('by_votes',
+    q => q.eq('gameId', game._id).eq('moveIndex', game.moveCount)
+  ).order('desc').collect();
+  // Should be ordered in the query,
+  // and potentially only take the top options.
   sortOptions(options);
   return options;
 });
