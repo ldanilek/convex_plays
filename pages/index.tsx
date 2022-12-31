@@ -4,7 +4,7 @@ import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import { ConvexProvider, ConvexReactClient } from "convex-dev/react";
 import convexConfig from "../convex.json";
-import { useQuery, useMutation, useConvex } from "../convex/_generated/react";
+import { useQuery, useMutation, useConvex, useAction } from "../convex/_generated/react";
 import { useState, useEffect } from 'react';
 import chess from "chess";
 import { GameState, minVotePeriod, PlayedMove, MoveOption, sortOptions } from '../common';
@@ -282,6 +282,7 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
   );
   const [moveInput, setMoveInput] = useState("");
   const playMove = useMutation("playMove");
+  const playComputerMove = useAction('actions/playComputerMove');
   const [playEnabled, setPlayEnabled] = useState(false);
   let toPlay = "White";
   let sampleMove = "Bxe5";
@@ -323,8 +324,9 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
       setMoveInput("");
     }
   };
-  const play = () => {
-    playMove();
+  const play = async () => {
+    await playMove();
+    await playComputerMove();
   }
   const updatePlayEnabled = () => {
     const currentTime = (new Date()).getTime();
