@@ -38,8 +38,11 @@ export const constructGame = (game: GameState, moves: PlayedMove[]): chess.Algeb
 
 export const findAutomaticMove = (game: GameState, moves: PlayedMove[]): string => {
   const gameClient = constructGame(game, moves);
-  for (let move in gameClient.notatedMoves) {
-    return move;
+  const notatedMoves = gameClient.notatedMoves;
+  const possibleMoves = Object.keys(notatedMoves);
+  if (possibleMoves.length === 0) {
+    return "";
   }
-  return "";
+  const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+  return possibleMoves[randomIndex];
 };
