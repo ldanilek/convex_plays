@@ -1,10 +1,10 @@
-import { Id, Document } from "./convex/_generated/dataModel";
+import { Id, Doc } from "./convex/_generated/dataModel";
 
-export type GameState = Document<'games'>;
+export type GameState = Doc<'games'>;
 
-export type PlayedMove = Document<'moves'>;
+export type PlayedMove = Doc<'moves'>;
 
-export type MoveOption = Document<'move_options'>;
+export type MoveOption = Doc<'move_options'>;
 
 export const sortOptions = (options: MoveOption[]) => {
   options.sort((a, b) => ((a.votes < b.votes) || (a.votes === b.votes && a.move < b.move)) ? 1 : -1);

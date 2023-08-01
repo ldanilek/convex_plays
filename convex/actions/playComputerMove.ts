@@ -1,9 +1,12 @@
+"use node";
+
+import { api } from "../_generated/api";
 import { action } from "../_generated/server";
 import { findAutomaticMove } from "../../chessEngine";
 
-export default action(async ({ mutation, query }): Promise<void> => {
+export default action(async (ctx): Promise<void> => {
   console.log("computing computer move");
-  const g = await query('getGame');
+  const g = await ctx.runQuery(api.getGame.default);
   if (g === null) {
     return;
   }
@@ -13,5 +16,5 @@ export default action(async ({ mutation, query }): Promise<void> => {
     return;
   }
   const computerMove = await findAutomaticMove(game, moves);
-  await mutation('playComputerMove', computerMove);
+  await ctx.runMutation(api.playComputerMove.default, {computerMove});
 });

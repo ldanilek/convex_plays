@@ -2,14 +2,13 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
-import { ConvexProvider, ConvexReactClient } from "convex-dev/react";
-import convexConfig from "../convex.json";
-import { useQuery, useMutation, useConvex, useAction } from "../convex/_generated/react";
 import { useState, useEffect } from 'react';
 import chess from "chess";
 import { GameState, minVotePeriod, PlayedMove, MoveOption, sortOptions } from '../common';
 import { constructGame } from '../chess';
 import { Id } from '../convex/_generated/dataModel';
+import { useAction, useMutation, useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
 
 
 
@@ -82,7 +81,7 @@ const optimisticVote = (
     const option = newOptions.find((existingOption) => existingOption.move === move);
     if (!option) {
       newOptions.push({
-        _id: new Id('move_options', crypto.randomUUID()),
+        _id: crypto.randomUUID() as Id<"move_options">,
         _creationTime: 0,
         gameId: gameState._id,
         moveIndex: gameState.moveCount,
@@ -102,15 +101,15 @@ type ChessBoardProps = {
 }
 
 const ChessBoard = ({hoverMove}: ChessBoardProps) => {
-  const game = useQuery("getGame");
-  const createGame = useMutation("createGame");
+  const game = useQuery(api.getGame.default);
+  const createGame = useMutation(api.createGame.default);
   const [srcIndex, setSrcIndex] = useState<number | null>(null);
-  const voteForOption = useMutation("voteForOption").withOptimisticUpdate(
-    (localQueryStore, move) => {
-      const options = localQueryStore.getQuery("getOptions", []);
+  const voteForOption = useMutation(api.voteForOption.default).withOptimisticUpdate(
+    (localQueryStore, {move}) => {
+      const options = localQueryStore.getQuery(api.getOptions.default, {});
       const newOptions = optimisticVote(move, options, game);
       if (!!newOptions) {
-        localQueryStore.setQuery("getOptions", [], newOptions);
+        localQueryStore.setQuery(api.getOptions.default, {}, newOptions);
       }
     }
   );
@@ -197,7 +196,7 @@ const ChessBoard = ({hoverMove}: ChessBoardProps) => {
     } else {
       const moveNotation = possibleDestMoves.get(i);
       if (moveNotation) {
-        voteForOption(moveNotation);
+        voteForOption({move: moveNotation});
         setSrcIndex(null);
       } else {
         setSrcIndex(i);
@@ -269,20 +268,20 @@ type EntryFormProps = {
 };
 
 const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
-  const options = useQuery("getOptions") ?? [];
-  const game = useQuery("getGame");
-  const voteForOption = useMutation("voteForOption").withOptimisticUpdate(
-    (localQueryStore, move) => {
-      const options = localQueryStore.getQuery("getOptions", []);
+  const options = useQuery(api.getOptions.default) ?? [];
+  const game = useQuery(api.getGame.default);
+  const voteForOption = useMutation(api.voteForOption.default).withOptimisticUpdate(
+    (localQueryStore, {move}) => {
+      const options = localQueryStore.getQuery(api.getOptions.default, {});
       const newOptions = optimisticVote(move, options, game);
       if (!!newOptions) {
-        localQueryStore.setQuery("getOptions", [], newOptions);
+        localQueryStore.setQuery(api.getOptions.default, {}, newOptions);
       }
     }
   );
   const [moveInput, setMoveInput] = useState("");
-  const playMove = useMutation("playMove");
-  const playComputerMove = useAction('actions/playComputerMove');
+  const playMove = useMutation(api.playMove.default);
+  const playComputerMove = useAction(api.actions.playComputerMove.default);
   const [playEnabled, setPlayEnabled] = useState(false);
   let toPlay = "White";
   let sampleMove = "Bxe5";
@@ -318,9 +317,9 @@ const EntryForm = ({onMouseEnter, onMouseLeave}: EntryFormProps) => {
   const handleInputChange = (event: any) => {
     setMoveInput(event.target.value);
   };
-  const submit = () => {
+  const submit = async () => {
     if (moveInput && moveInput.length > 0) {
-      voteForOption(moveInput);
+      await voteForOption({move: moveInput});
       setMoveInput("");
     }
   };
